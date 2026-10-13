@@ -51,6 +51,8 @@ const RECONNECT_TOKEN_KEY = 'scribbleReconnectToken';
 
 const defaultRoomConfig = { roundCount: 3, drawingTime: 60, words: ['planet', 'castle', 'guitar'] };
 
+const createDefaultPlayerName = () => `Player ${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
+
 const getPlayerPoint = (event: React.PointerEvent<HTMLCanvasElement>) => {
   const rect = event.currentTarget.getBoundingClientRect();
   const scaleX = event.currentTarget.width / rect.width;
@@ -66,7 +68,7 @@ function App() {
   const [connected, setConnected] = useState(false);
   const [playerId, setPlayerId] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [playerName, setPlayerName] = useState('Player One');
+  const [playerName, setPlayerName] = useState(() => createDefaultPlayerName());
   const [room, setRoom] = useState<RoomState | null>(null);
   const [chatInput, setChatInput] = useState('');
   const [guessInput, setGuessInput] = useState('');
@@ -216,7 +218,9 @@ function App() {
 
   const createRoom = () => {
     if (!socket) return;
-    socket.emit('createRoom', { playerName });
+    const safeName = playerName.trim() || createDefaultPlayerName();
+    setPlayerName(safeName);
+    socket.emit('createRoom', { playerName: safeName });
   };
 
   const joinRoom = () => {
@@ -225,9 +229,11 @@ function App() {
       return;
     }
     const desiredRoomCode = roomCode.trim().toUpperCase();
+    const safeName = playerName.trim() || createDefaultPlayerName();
+    setPlayerName(safeName);
     socket.emit('joinRoom', {
       roomCode: desiredRoomCode,
-      playerName,
+      playerName: safeName,
       reconnectToken: sessionStorage.getItem(RECONNECT_TOKEN_KEY) ?? undefined
     });
   };
